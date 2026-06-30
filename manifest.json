@@ -1,0 +1,14 @@
+{
+  "name": "Star of the City — Iniciativa",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "author": "Mesa de Star of the City",
+  "description": "Rastreador de Iniciativa por Dados de Velocidade do sistema Star of the City.",
+  "action": {
+    "title": "Iniciativa — Star of the City",
+    "icon": "icon.svg",
+    "popover": "index.html",
+    "width": 430,
+    "height": 680
+  }
+}
