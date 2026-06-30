@@ -6,8 +6,8 @@
   "description": "Rastreador de Iniciativa por Dados de Velocidade do sistema Star of the City.",
   "action": {
     "title": "Iniciativa — Star of the City",
-    "icon": "icon.svg",
-    "popover": "index.html",
+    "icon": "https://guedesp123.github.io/Extens-o-owlbear---Pessoal/icon.svg",
+    "popover": "https://guedesp123.github.io/Extens-o-owlbear---Pessoal/index.html",
     "width": 430,
     "height": 680
   }
