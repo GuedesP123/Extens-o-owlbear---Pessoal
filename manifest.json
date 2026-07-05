@@ -1,10 +1,9 @@
 {
   "name": "Star of the City — Iniciativa",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "manifest_version": 1,
   "author": "Mesa de Star of the City",
   "description": "Rastreador de Iniciativa por Dados de Velocidade do sistema Star of the City.",
-  "background_url": "https://guedesp123.github.io/Extens-o-owlbear---Pessoal/background.html",
   "action": {
     "title": "Iniciativa — Star of the City",
     "icon": "https://guedesp123.github.io/Extens-o-owlbear---Pessoal/icon.svg",

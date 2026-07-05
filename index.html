@@ -602,6 +602,35 @@ if (!OBR.isAvailable) {
 }
 
 async function init() {
+  // Registra o menu de contexto dos tokens
+  const BASE = "https://guedesp123.github.io/Extens-o-owlbear---Pessoal";
+  const CTX_ID = "com.starofthecity.initiative/ctx";
+  const POP_ID = "com.starofthecity.initiative/token-pop";
+  try {
+    OBR.contextMenu.create({
+      id: CTX_ID,
+      icons: [{
+        icon: `${BASE}/icon.svg`,
+        label: "Iniciativa SotC — Adicionar / Editar",
+        filter: { every: [{ key: "layer", value: "CHARACTER" }] },
+      }],
+      async onClick(context, elementId) {
+        const item = context.items[0];
+        if (!item) return;
+        await OBR.popover.open({
+          id: POP_ID,
+          url: `${BASE}/token-panel.html?itemId=${encodeURIComponent(item.id)}`,
+          height: 400,
+          width: 340,
+          anchorElementId: elementId,
+          anchorOrigin:    { horizontal: "RIGHT", vertical: "TOP" },
+          transformOrigin: { horizontal: "LEFT",  vertical: "TOP" },
+        });
+      },
+    });
+  } catch(e) { console.warn("SotC contextMenu:", e); }
+
+  // Carrega estado da cena
   const meta = await OBR.scene.getMetadata();
   const saved = meta[META_KEY];
   state = (saved && saved.combatants) ? saved : { sceneCount: 0, combatants: [] };
