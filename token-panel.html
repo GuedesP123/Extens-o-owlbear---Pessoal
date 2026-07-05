@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SotC — Token</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15110d;--bg-card:#1c1812;--bg-card2:#221d16;
+  --line:#4a3a22;--line-soft:#332a1c;
+  --brass:#d9a23b;--brass-dim:#8a611f;--brass-bright:#f0c773;
+  --ink:#ece3cf;--ink-dim:#a89a7c;--ink-faint:#6f6450;
+  --pc:#3f8a8f;--pc-dim:#1e4648;
+  --ally:#7a8c4a;--ally-dim:#3a4a22;
+  --enemy:#a4453f;--enemy-dim:#5c2723;
+  --deploy:#4a86d0;--deploy-bright:#90bfff;
+  --r:7px;--rs:5px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:13px;height:100%;}
+body{padding:12px;display:flex;flex-direction:column;gap:10px;}
+h2{font-family:'Cinzel',serif;font-size:14px;color:var(--brass-bright);margin:0;}
+.sub{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;margin-top:1px;}
+
+button{font-family:inherit;cursor:pointer;}
+.btn{border:1px solid var(--line);background:var(--bg-card);color:var(--ink);border-radius:var(--rs);padding:5px 10px;font-size:12px;font-weight:600;transition:filter .1s;}
+.btn:hover{filter:brightness(1.18);}
+.btn-brass{background:linear-gradient(180deg,var(--brass),var(--brass-dim));border-color:var(--brass-dim);color:#231700;}
+.btn-ghost{background:transparent;border-color:var(--line-soft);color:var(--ink-dim);}
+.btn-danger{background:var(--enemy-dim);border-color:var(--enemy);color:#f3d9d6;}
+.btn-full{width:100%;}
+.btn-row{display:flex;gap:6px;}
+.btn-row .btn{flex:1;}
+
+label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:2px;}
+input,select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--rs);color:var(--ink);padding:5px 8px;font-size:12px;font-family:inherit;}
+input:focus,select:focus{outline:2px solid var(--brass);}
+
+.section{display:flex;flex-direction:column;gap:7px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+
+.type-row{display:flex;gap:4px;}
+.tbtn{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--ink-dim);padding:5px 4px;font-size:10.5px;font-weight:600;border-radius:var(--rs);}
+.tbtn.active.t-pc{background:var(--pc-dim);border-color:var(--pc);color:#d3f0f0;}
+.tbtn.active.t-ally{background:var(--ally-dim);border-color:var(--ally);color:#e6f0c9;}
+.tbtn.active.t-enemy{background:var(--enemy-dim);border-color:var(--enemy);color:#f3d9d6;}
+
+.paralyze-btn{border:1px solid #6060a0;background:rgba(80,80,160,.18);color:#b0a0d0;border-radius:var(--rs);padding:6px 10px;font-size:11.5px;font-weight:600;width:100%;text-align:left;}
+.paralyze-btn.on{border-color:#c8b8f0;background:rgba(160,140,220,.32);color:#ede8ff;}
+
+/* dice */
+.dice-section{display:flex;flex-direction:column;gap:5px;}
+.dice-section label{margin-bottom:3px;}
+.dice-row{display:flex;flex-wrap:wrap;gap:5px;}
+.die-chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-weight:700;font-size:14px;border:1px solid;cursor:pointer;transition:opacity .1s;}
+.die-chip.available{background:linear-gradient(180deg,rgba(217,162,59,.28),rgba(217,162,59,.1));border-color:var(--brass-dim);color:var(--brass-bright);}
+.die-chip.used{background:rgba(55,50,44,.55);border-color:#3a3530;color:#6a6258;text-decoration:line-through;}
+.die-chip.standby{background:rgba(74,134,208,.25);border-color:var(--deploy);color:var(--deploy-bright);}
+.die-chip.standby::before{content:"✓ ";font-size:10px;}
+.die-chip:hover{filter:brightness(1.2);}
+
+.divider{border:none;border-top:1px solid var(--line-soft);margin:2px 0;}
+
+.status-bar{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg-card2);border:1px solid var(--line-soft);border-radius:var(--rs);font-size:11px;color:var(--ink-dim);}
+.status-bar .name-big{font-family:'Cinzel',serif;font-size:13px;color:var(--ink);font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.status-bar .type-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.type-dot.type-pc{background:var(--pc);}
+.type-dot.type-ally{background:var(--ally);}
+.type-dot.type-enemy{background:var(--enemy);}
+
+.msg{color:var(--ink-dim);font-size:12px;text-align:center;padding:8px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module">
+import OBR from "https://esm.sh/@owlbear-rodeo/sdk@3.1.0";
+import {
+  META_KEY, TYPE_LABEL, DICE_SIZES,
+  uid, clamp, escapeHtml,
+  rollCombatantDice, defaultCombatant, highestAvailable
+} from "https://guedesp123.github.io/Extens-o-owlbear---Pessoal/shared.js";
+
+const root = document.getElementById('root');
+const params = new URLSearchParams(location.search);
+const ITEM_ID = params.get('itemId') || '';
+
+/* ---------- state ---------- */
+let sceneState = { sceneCount: 0, combatants: [] };
+let tokenName  = '';
+
+/* helper */
+function esc(s) { return escapeHtml(s); }
+function getCombatant() {
+  return sceneState.combatants.find(c => c.itemId === ITEM_ID) || null;
+}
+
+/* ---------- persist ---------- */
+async function persist() {
+  try { await OBR.scene.setMetadata({ [META_KEY]: sceneState }); }
+  catch(e) { console.error('SotC token-panel persist:', e); }
+}
+function mutate(fn) { fn(sceneState); render(); persist(); }
+
+/* ---------- actions ---------- */
+function addToInitiative(data) {
+  const c = defaultCombatant({
+    ...data,
+    itemId: ITEM_ID,
+    name: tokenName || data.name || 'Token',
+  });
+  c.diceCount = clamp(data.diceCount, 1, 10);
+  c.diceSize  = Number(data.diceSize);
+  c.bruto     = Number(data.bruto) || 0;
+  c.dice = rollCombatantDice(c);
+  mutate(s => s.combatants.push(c));
+}
+
+function removeFromInitiative() {
+  mutate(s => { s.combatants = s.combatants.filter(c => c.itemId !== ITEM_ID); });
+}
+
+function updateField(field, value) {
+  mutate(s => {
+    const c = s.combatants.find(c => c.itemId === ITEM_ID);
+    if (!c) return;
+    if (field === 'diceCount') c.diceCount = clamp(Number(value), 1, 10);
+    else if (field === 'diceSize')  c.diceSize  = Number(value);
+    else if (field === 'bruto') c.bruto = Number(value) || 0;
+    else if (field === 'bind')  c.bind  = Math.max(0, Number(value) || 0);
+    else if (field === 'accel') c.accel = Math.max(0, Number(value) || 0);
+    else if (field === 'type')  c.type  = value;
+  });
+}
+
+function toggleParalyze() {
+  mutate(s => {
+    const c = s.combatants.find(c => c.itemId === ITEM_ID);
+    if (c) c.paralyze = !c.paralyze;
+  });
+}
+
+function toggleDie(did) {
+  mutate(s => {
+    const c = s.combatants.find(c => c.itemId === ITEM_ID);
+    const d = c?.dice.find(d => d.id === did);
+    if (!d) return;
+    if (d.status === 'available') d.status = 'used';
+    else if (d.status === 'used') d.status = 'available';
+    else if (d.status === 'standby') d.status = 'used';
+  });
+}
+
+/* ---------- render ---------- */
+function render() {
+  const c = getCombatant();
+  root.innerHTML = c ? editModeHtml(c) : addModeHtml();
+  attachEvents();
+}
+
+function editModeHtml(c) {
+  const diceHtml = (c.dice || []).map(d => `
+    <div class="die-chip ${d.status}" data-die-id="${d.id}"
+         title="${esc(d.breakdown)} — clique para ativar/desativar">
+      ${d.value}
+    </div>`).join('');
+
+  return `
+    <div class="status-bar">
+      <span class="type-dot type-${esc(c.type)}"></span>
+      <span class="name-big">${esc(c.name)}</span>
+      <span style="color:var(--ink-faint);font-size:10px;">#${highestAvailable(c)||'—'}</span>
+    </div>
+
+    <div class="section">
+      <div class="row3">
+        <div><label>Dados</label>
+          <input type="number" min="1" max="10" value="${c.diceCount}" data-field="diceCount"/></div>
+        <div><label>Tamanho</label>
+          <select data-field="diceSize">
+            ${DICE_SIZES.map(s=>`<option value="${s}"${c.diceSize===s?' selected':''}>d${s}</option>`).join('')}
+          </select></div>
+        <div><label>Bruto</label>
+          <input type="number" value="${c.bruto}" data-field="bruto"/></div>
+      </div>
+      <div class="row2">
+        <div><label>Bind (−)</label>
+          <input type="number" min="0" value="${c.bind}" data-field="bind"/></div>
+        <div><label>Aceleração (+)</label>
+          <input type="number" min="0" value="${c.accel}" data-field="accel"/></div>
+      </div>
+      <div><label>Tipo</label>
+        <div class="type-row">
+          ${Object.entries(TYPE_LABEL).map(([k,v])=>`
+            <button type="button" class="tbtn t-${k}${c.type===k?' active':''}" data-set-type="${k}">${v}</button>
+          `).join('')}
+        </div>
+      </div>
+      <button class="paralyze-btn${c.paralyze?' on':''}" id="para-btn">
+        ${c.paralyze ? '❄ Paralisado — ATIVO (dado trava em 1)' : '○ Paralisado — inativo'}
+      </button>
+    </div>
+
+    <hr class="divider"/>
+    <div class="dice-section">
+      <label>Dados atuais — clique para ativar/desativar</label>
+      <div class="dice-row" id="dice-row">
+        ${diceHtml || '<span style="color:var(--ink-faint);font-size:11px;">Sem dados rolados.</span>'}
+      </div>
+    </div>
+
+    <hr class="divider"/>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="remove-btn">Remover da Iniciativa</button>
+    </div>`;
+}
+
+function addModeHtml() {
+  return `
+    <div>
+      <h2>${esc(tokenName) || 'Token'}</h2>
+      <div class="sub">Adicionar à Iniciativa</div>
+    </div>
+    <div class="section">
+      <div><label>Tipo</label>
+        <div class="type-row">
+          ${Object.entries(TYPE_LABEL).map(([k,v])=>`
+            <button type="button" class="tbtn t-${k}${k==='pc'?' active':''}" data-set-type="${k}">${v}</button>
+          `).join('')}
+        </div>
+        <input type="hidden" id="type-val" value="pc"/>
+      </div>
+      <div class="row2">
+        <div><label>Qtd. Dados</label>
+          <input type="number" id="dc" min="1" max="10" value="3"/></div>
+        <div><label>Tamanho</label>
+          <select id="ds">
+            ${DICE_SIZES.map(s=>`<option value="${s}"${s===8?' selected':''}>d${s}</option>`).join('')}
+          </select></div>
+      </div>
+      <div><label>Valor Bruto</label>
+        <input type="number" id="br" value="0"/></div>
+    </div>
+    <button class="btn btn-brass btn-full" id="add-btn">Rolar e Adicionar à Iniciativa</button>`;
+}
+
+/* ---------- events ---------- */
+function attachEvents() {
+  const c = getCombatant();
+
+  if (c) {
+    // field changes
+    root.querySelectorAll('[data-field]').forEach(el => {
+      el.addEventListener('change', () => updateField(el.dataset.field, el.value));
+    });
+    // paralyze
+    root.querySelector('#para-btn')?.addEventListener('click', toggleParalyze);
+    // die toggle
+    root.querySelectorAll('[data-die-id]').forEach(el => {
+      el.addEventListener('click', () => toggleDie(el.dataset.dieId));
+    });
+    // remove
+    root.querySelector('#remove-btn')?.addEventListener('click', removeFromInitiative);
+    // type buttons (edit mode)
+    root.querySelectorAll('[data-set-type]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        root.querySelectorAll('[data-set-type]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateField('type', btn.dataset.setType);
+      });
+    });
+  } else {
+    // add mode type buttons
+    root.querySelectorAll('[data-set-type]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        root.querySelectorAll('[data-set-type]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const hid = root.querySelector('#type-val');
+        if (hid) hid.value = btn.dataset.setType;
+      });
+    });
+    // add button
+    root.querySelector('#add-btn')?.addEventListener('click', () => {
+      const typeVal = root.querySelector('#type-val')?.value || 'pc';
+      addToInitiative({
+        type:      typeVal,
+        diceCount: Number(root.querySelector('#dc')?.value || 3),
+        diceSize:  Number(root.querySelector('#ds')?.value || 8),
+        bruto:     Number(root.querySelector('#br')?.value || 0),
+      });
+    });
+  }
+}
+
+/* ---------- bootstrap ---------- */
+root.innerHTML = '<div class="msg">Conectando…</div>';
+
+if (!OBR.isAvailable) {
+  root.innerHTML = '<div class="msg">Fora do Owlbear Rodeo.</div>';
+} else {
+  OBR.onReady(async () => {
+    // get token name
+    try {
+      const items = await OBR.scene.items.getItems([ITEM_ID]);
+      const item  = items[0];
+      tokenName   = item?.text?.plainText || item?.name || 'Token';
+    } catch(_) { tokenName = 'Token'; }
+
+    // load scene state
+    try {
+      const meta = await OBR.scene.getMetadata();
+      const saved = meta[META_KEY];
+      sceneState = (saved && saved.combatants) ? saved : { sceneCount: 0, combatants: [] };
+    } catch(_) { sceneState = { sceneCount: 0, combatants: [] }; }
+
+    render();
+
+    // live sync
+    OBR.scene.onMetadataChange(m => {
+      const inc = m[META_KEY];
+      if (inc && inc.combatants) { sceneState = inc; render(); }
+    });
+  });
+}
+</script>
+</body>
+</html>

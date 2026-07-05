@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Star of the City — Iniciativa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#15110d;--bg-panel:#1c1812;--bg-card:#221d16;--bg-card2:#272019;
+  --line:#4a3a22;--line-soft:#332a1c;
+  --brass:#d9a23b;--brass-dim:#8a611f;--brass-bright:#f0c773;
+  --ink:#ece3cf;--ink-dim:#a89a7c;--ink-faint:#6f6450;
+  --pc:#3f8a8f;--pc-dim:#1e4648;
+  --ally:#7a8c4a;--ally-dim:#3a4a22;
+  --enemy:#a4453f;--enemy-dim:#5c2723;
+  --deploy:#4a86d0;--deploy-dim:#1e3a60;--deploy-bright:#90bfff;
+  --paralyze-on-bg:rgba(160,140,220,0.32);--paralyze-on-border:#c8b8f0;--paralyze-on-text:#ede8ff;
+  --r:7px;--rs:5px;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:13px;}
+body{background-image:radial-gradient(ellipse at top,rgba(217,162,59,.06),transparent 55%);}
+#app{display:flex;flex-direction:column;height:100%;max-height:100vh;}
+::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+h1,h2{font-family:'Cinzel',serif;margin:0;}
+button{font-family:inherit;cursor:pointer;}
+input,select{font-family:inherit;}
+label{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:2px;}
+
+/* ---- TOP BAR ---- */
+.topbar{flex:0 0 auto;padding:10px 13px 9px;border-bottom:1px solid var(--line-soft);background:var(--bg-panel);}
+.topbar-title{font-size:15px;color:var(--brass-bright);font-family:'Cinzel',serif;}
+.topbar-title small{display:block;font-family:'Inter',sans-serif;font-size:9.5px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase;margin-top:1px;}
+.scene-row{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.scene-label{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;}
+.scene-num{font-family:'Cinzel',serif;font-size:16px;color:var(--brass-bright);min-width:26px;text-align:center;font-weight:700;}
+.scene-spacer{flex:1;}
+
+/* ---- BUTTONS ---- */
+.btn{border:1px solid var(--line);background:var(--bg-card);color:var(--ink);border-radius:var(--rs);padding:5px 10px;font-size:11.5px;font-weight:600;transition:filter .1s;}
+.btn:hover{filter:brightness(1.18);}
+.btn:active{filter:brightness(.9);}
+.btn:focus-visible{outline:2px solid var(--brass);outline-offset:1px;}
+.btn-brass{background:linear-gradient(180deg,var(--brass),var(--brass-dim));border-color:var(--brass-dim);color:#231700;}
+.btn-ghost{background:transparent;border-color:var(--line-soft);color:var(--ink-dim);}
+.btn-danger{background:var(--enemy-dim);border-color:var(--enemy);color:#f3d9d6;}
+.btn-sm{padding:3px 8px;font-size:11px;}
+.btn-xs{padding:2px 6px;font-size:10px;}
+.btn-icon{width:22px;height:22px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-size:11px;line-height:1;}
+
+/* ---- COMBATANT LIST ---- */
+.list-wrap{flex:1 1 auto;overflow-y:auto;padding:8px 10px 14px;display:flex;flex-direction:column;gap:8px;}
+.empty-state{margin-top:24px;text-align:center;color:var(--ink-faint);font-size:12px;line-height:1.7;}
+.empty-state .ico{font-size:28px;display:block;margin-bottom:6px;opacity:.5;}
+
+/* ---- CARD ---- */
+.card{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.4);}
+.card.type-pc   {border-left:3px solid var(--pc);}
+.card.type-ally {border-left:3px solid var(--ally);}
+.card.type-enemy{border-left:3px solid var(--enemy);}
+.card.exhausted {opacity:.65;}
+
+.card-head{display:flex;align-items:center;gap:5px;padding:7px 9px 7px 8px;background:var(--bg-card2);border-bottom:1px solid var(--line-soft);}
+.rank-badge{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--brass-bright);min-width:30px;flex-shrink:0;}
+.rank-badge.dim{color:var(--ink-faint);}
+.type-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.type-dot.type-pc   {background:var(--pc);}
+.type-dot.type-ally {background:var(--ally);}
+.type-dot.type-enemy{background:var(--enemy);}
+.card-name{flex:1;min-width:0;background:transparent;border:none;color:var(--ink);font-weight:700;font-size:12.5px;font-family:'Cinzel',serif;padding:1px 3px;border-radius:3px;}
+.card-name:focus{outline:1px solid var(--brass);}
+
+/* ---- DICE ROW ---- */
+.dice-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:8px 10px;}
+.die-chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 5px 3px 9px;font-weight:700;font-size:13px;border:1px solid;position:relative;transition:opacity .1s;}
+.die-val{cursor:pointer;line-height:1;}
+.die-acts{display:flex;gap:2px;margin-left:1px;}
+.die-act-btn{width:17px;height:17px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;font-size:9px;line-height:1;background:rgba(0,0,0,.35);color:inherit;cursor:pointer;opacity:.7;transition:opacity .12s;}
+.die-act-btn:hover{opacity:1;}
+.die-size-tag{font-size:8px;color:inherit;opacity:.7;font-weight:400;font-family:'Inter',sans-serif;}
+
+/* available = gold */
+.die-chip.available{background:linear-gradient(180deg,rgba(217,162,59,.28),rgba(217,162,59,.10));border-color:var(--brass-dim);color:var(--brass-bright);}
+/* used = gray, muted but visible */
+.die-chip.used{background:rgba(55,50,44,.55);border-color:#3a3530;color:#6a6258;}
+.die-chip.used .die-val{text-decoration:line-through;cursor:pointer;}
+/* standby/deploy = blue with checkmark */
+.die-chip.standby{background:linear-gradient(180deg,rgba(74,134,208,.3),rgba(74,134,208,.12));border-color:var(--deploy);color:var(--deploy-bright);}
+.standby-mark{font-size:10px;color:var(--deploy-bright);margin-right:1px;}
+/* editing inline */
+.die-chip.editing{background:var(--bg);border-color:var(--brass);padding:2px 5px;}
+.die-edit-input{width:46px;background:transparent;border:none;color:var(--brass-bright);font-weight:700;font-size:14px;font-family:'Inter',sans-serif;text-align:center;padding:1px;}
+.die-edit-input:focus{outline:none;}
+
+/* extra-die button */
+.btn-extra{background:rgba(0,0,0,.2);border:1px dashed var(--line);color:var(--ink-faint);border-radius:999px;padding:3px 9px;font-size:10.5px;cursor:pointer;}
+.btn-extra:hover{color:var(--ink);border-color:var(--brass-dim);}
+.extra-die-picker{display:inline-flex;align-items:center;gap:4px;}
+.extra-die-picker select{background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:var(--rs);padding:2px 4px;font-size:11px;}
+
+/* ---- SETTINGS PANEL ---- */
+.settings-panel{padding:8px 10px 10px;border-top:1px solid var(--line-soft);background:var(--bg);}
+.srow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+.sf{display:flex;align-items:center;gap:4px;background:var(--bg-card);border:1px solid var(--line-soft);border-radius:var(--rs);padding:3px 7px;}
+.sf .lbl{font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em;}
+.sf input,.sf select{background:transparent;border:none;color:var(--ink);font-size:12px;width:42px;text-align:center;padding:1px;}
+.sf select{width:auto;}
+.sf input:focus,.sf select:focus{outline:none;}
+.paralyze-btn{border:1px solid #6060a0;background:rgba(80,80,160,.18);color:#b0a0d0;border-radius:var(--rs);padding:5px 10px;font-size:11px;font-weight:600;width:100%;margin-top:4px;text-align:left;}
+.paralyze-btn.on{border-color:var(--paralyze-on-border);background:var(--paralyze-on-bg);color:var(--paralyze-on-text);}
+.paralyze-btn.on::before{content:"❄ ";}
+.paralyze-btn:not(.on)::before{content:"○ ";}
+
+/* ---- ADD SECTION ---- */
+.add-section{flex:0 0 auto;border-top:1px solid var(--line-soft);}
+.add-toggle{width:100%;background:var(--bg-panel);border:none;color:var(--brass);font-size:12px;font-weight:700;padding:9px 14px;text-align:left;display:flex;justify-content:space-between;}
+.add-toggle:hover{background:var(--bg-card);}
+.add-form{padding:10px 13px 12px;background:var(--bg-card);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;}
+.fgrid.full{grid-template-columns:1fr;}
+.finput{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:var(--rs);color:var(--ink);padding:5px 8px;font-size:12px;}
+.finput:focus{outline:2px solid var(--brass);}
+.type-row{display:flex;gap:4px;}
+.tbtn{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--ink-dim);padding:5px 4px;font-size:10.5px;font-weight:600;border-radius:var(--rs);}
+.tbtn.active.t-pc{background:var(--pc-dim);border-color:var(--pc);color:#d3f0f0;}
+.tbtn.active.t-ally{background:var(--ally-dim);border-color:var(--ally);color:#e6f0c9;}
+.tbtn.active.t-enemy{background:var(--enemy-dim);border-color:var(--enemy);color:#f3d9d6;}
+.form-btns{display:flex;gap:6px;margin-top:6px;}
+.form-btns .btn{flex:1;}
+
+/* ---- FALLBACK ---- */
+.fallback{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:8px;}
+.fallback .ico{font-size:32px;opacity:.6;}
+.fallback h2{color:var(--brass-bright);font-size:14px;}
+.fallback p{color:var(--ink-dim);font-size:11.5px;max-width:270px;line-height:1.6;margin:0;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import OBR from "https://esm.sh/@owlbear-rodeo/sdk@3.1.0";
+import {
+  META_KEY, TYPE_LABEL, DICE_SIZES,
+  uid, clamp, escapeHtml,
+  rollCombatantDice, rerollOneDie, setManualDieValue, addExtraDie,
+  defaultCombatant, highestAvailable
+} from "https://guedesp123.github.io/Extens-o-owlbear---Pessoal/shared.js";
+
+/* ======================== STATE ======================== */
+let state = { sceneCount: 0, combatants: [] };
+let ui = {
+  addOpen: false,
+  confirmDelete: null,
+  openSettings: new Set(),
+  editDie: null,       // {cid, did}
+  addExtraDie: null,   // cid
+};
+
+/* ======================== PERSISTENCE ======================== */
+async function persist() {
+  try { await OBR.scene.setMetadata({ [META_KEY]: state }); }
+  catch(e) { console.error("SotC persist:", e); }
+}
+function mutate(fn) { fn(state); render(); persist(); }
+
+/* ======================== ACTIONS ======================== */
+function addCombatant(data) {
+  const c = defaultCombatant(data);
+  c.diceCount = clamp(data.diceCount, 1, 10);
+  c.diceSize  = Number(data.diceSize);
+  c.bruto     = Number(data.bruto) || 0;
+  c.dice = rollCombatantDice(c);
+  mutate(s => s.combatants.push(c));
+}
+
+function removeCombatant(id) {
+  ui.confirmDelete = null;
+  ui.openSettings.delete(id);
+  mutate(s => { s.combatants = s.combatants.filter(c => c.id !== id); });
+}
+
+function updateField(id, field, value) {
+  mutate(s => {
+    const c = s.combatants.find(c => c.id === id);
+    if (!c) return;
+    if (field === 'name')      c.name      = value;
+    else if (field === 'type') c.type      = value;
+    else if (field === 'diceCount') c.diceCount = clamp(Number(value), 1, 10);
+    else if (field === 'diceSize')  c.diceSize  = Number(value);
+    else if (field === 'bruto') c.bruto = Number(value) || 0;
+    else if (field === 'bind')  c.bind  = Math.max(0, Number(value) || 0);
+    else if (field === 'accel') c.accel = Math.max(0, Number(value) || 0);
+  });
+}
+
+function toggleParalyze(id) {
+  mutate(s => { const c = s.combatants.find(c => c.id === id); if (c) c.paralyze = !c.paralyze; });
+}
+
+function rerollAll() {
+  mutate(s => { for (const c of s.combatants) c.dice = rollCombatantDice(c); });
+}
+
+function rerollCombatant(id) {
+  mutate(s => { const c = s.combatants.find(c => c.id === id); if (c) c.dice = rollCombatantDice(c); });
+}
+
+function changeScene(delta) {
+  mutate(s => {
+    s.sceneCount = Math.max(0, (s.sceneCount || 0) + delta);
+    if (delta > 0) for (const c of s.combatants) c.dice = rollCombatantDice(c);
+  });
+}
+
+function setDieStatus(cid, did, status) {
+  mutate(s => {
+    const c = s.combatants.find(c => c.id === cid);
+    const d = c?.dice.find(d => d.id === did);
+    if (d) d.status = status;
+  });
+}
+
+function doRerollDie(cid, did) {
+  mutate(s => {
+    const c = s.combatants.find(c => c.id === cid);
+    const d = c?.dice.find(d => d.id === did);
+    if (c && d) { rerollOneDie(c, d); d.status = 'available'; }
+  });
+}
+
+function commitDieEdit(cid, did, rawVal) {
+  ui.editDie = null;
+  const v = parseInt(rawVal, 10);
+  if (!isNaN(v) && v >= 1) {
+    mutate(s => {
+      const c = s.combatants.find(c => c.id === cid);
+      const d = c?.dice.find(d => d.id === did);
+      if (d) setManualDieValue(d, v);
+    });
+  } else { render(); postRender(); }
+}
+
+function doAddExtraDie(cid, size) {
+  ui.addExtraDie = null;
+  mutate(s => { const c = s.combatants.find(c => c.id === cid); if (c) addExtraDie(c, Number(size)); });
+}
+
+function removeExtraDie(cid, did) {
+  mutate(s => { const c = s.combatants.find(c => c.id === cid); if (c) c.dice = c.dice.filter(d => d.id !== did); });
+}
+
+function toggleAllDice(cid) {
+  mutate(s => {
+    const c = s.combatants.find(c => c.id === cid);
+    if (!c) return;
+    const anyAvail = c.dice.some(d => d.status === 'available');
+    for (const d of c.dice) d.status = anyAvail ? 'used' : 'available';
+  });
+}
+
+/* ======================== RANKING ======================== */
+function computeRanked(combatants) {
+  const list = combatants.map(c => ({ c, max: highestAvailable(c) }))
+    .sort((a, b) => b.max - a.max);
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].max === 0)       list[i].rank = null;
+    else if (i === 0)            list[i].rank = 1;
+    else if (list[i].max === list[i-1].max) list[i].rank = list[i-1].rank;
+    else                         list[i].rank = i + 1;
+  }
+  return list;
+}
+
+/* ======================== RENDER ======================== */
+const app = document.getElementById('app');
+
+function render() {
+  const ranked = computeRanked(state.combatants);
+  const listHtml = ranked.length
+    ? ranked.map(({ c, rank }) => cardHtml(c, rank)).join('')
+    : `<div class="empty-state"><span class="ico">⚙</span>Nenhum combatente.<br/>Use "Adicionar" ou clique direito em um token.</div>`;
+
+  app.innerHTML = `
+    <div class="topbar">
+      <div class="topbar-title">Star of the City<small>Iniciativa — Dados de Velocidade</small></div>
+      <div class="scene-row">
+        <span class="scene-label">Cena</span>
+        <button class="btn btn-icon btn-ghost" data-action="scene-dec" title="Cena anterior (só decrementa)">◀</button>
+        <span class="scene-num">${state.sceneCount ?? 0}</span>
+        <button class="btn btn-icon btn-brass" data-action="scene-inc" title="Próxima cena + rolar dados">▶</button>
+        <span class="scene-spacer"></span>
+        <button class="btn btn-sm btn-ghost" data-action="reroll-all" title="Rerolar todos sem mudar a cena">🎲 Rerolar Todos</button>
+      </div>
+    </div>
+    <div class="list-wrap">${listHtml}</div>
+    <div class="add-section">
+      <button class="add-toggle" data-action="toggle-add">
+        <span>${ui.addOpen ? '▾' : '▸'} Adicionar combatente</span>
+      </button>
+      ${ui.addOpen ? addFormHtml() : ''}
+    </div>`;
+
+  postRender();
+}
+
+/* ---- CARD ---- */
+function cardHtml(c, rank) {
+  const sett    = ui.openSettings.has(c.id);
+  const isDel   = ui.confirmDelete === c.id;
+  const anyAvail = c.dice.some(d => d.status === 'available');
+  const exhausted = !anyAvail;
+  const rankTxt = rank !== null ? `#${rank}` : '—';
+  const rankCls = rank !== null ? '' : 'dim';
+
+  return `
+  <div class="card type-${esc(c.type)}${exhausted ? ' exhausted' : ''}" data-cid="${c.id}">
+    <div class="card-head">
+      <span class="rank-badge ${rankCls}">${rankTxt}</span>
+      <span class="type-dot type-${esc(c.type)}"></span>
+      <input class="card-name" data-action="update" data-field="name" data-cid="${c.id}"
+             value="${esc(c.name)}" title="Clique para renomear"/>
+      <button class="btn btn-icon btn-ghost" data-action="toggle-all" data-cid="${c.id}"
+              title="${anyAvail ? 'Desativar todos os dados' : 'Reativar todos os dados'}">
+        ${anyAvail ? '⚡' : '💤'}
+      </button>
+      <button class="btn btn-icon btn-ghost" data-action="settings" data-cid="${c.id}"
+              title="Configurações">${sett ? '▴' : '⚙'}</button>
+      <button class="btn btn-icon btn-ghost" data-action="reroll" data-cid="${c.id}"
+              title="Rerolar todos os dados deste combatente">🎲</button>
+      <button class="btn btn-icon ${isDel ? 'btn-danger' : 'btn-ghost'}" data-action="delete"
+              data-cid="${c.id}" title="${isDel ? 'Confirmar remoção' : 'Remover combatente'}">
+        ${isDel ? '✓' : '✕'}
+      </button>
+    </div>
+    <div class="dice-row">
+      ${(c.dice || []).map(d => dieChipHtml(c, d)).join('')}
+      ${extraDieAreaHtml(c.id)}
+    </div>
+    ${sett ? settingsHtml(c) : ''}
+  </div>`;
+}
+
+/* ---- DIE CHIP ---- */
+function dieChipHtml(c, d) {
+  const cid = c.id, did = d.id;
+  const isEdit = ui.editDie?.cid === cid && ui.editDie?.did === did;
+  const extTag  = d.extra ? `<span class="die-size-tag">d${d.size}</span>` : '';
+  const rmBtn   = d.extra
+    ? `<button class="die-act-btn" data-action="remove-die" data-cid="${cid}" data-did="${did}" title="Remover dado extra">×</button>`
+    : '';
+
+  if (isEdit) {
+    return `<div class="die-chip editing">
+      <input class="die-edit-input" type="number" value="${d.value}" min="1" max="99"
+             data-cid="${cid}" data-did="${did}"/>
+    </div>`;
+  }
+
+  const acts = {
+    available: `
+      <button class="die-act-btn" data-action="reroll-die"  data-cid="${cid}" data-did="${did}" title="Rerolar este dado">🎲</button>
+      <button class="die-act-btn" data-action="standby-die" data-cid="${cid}" data-did="${did}" title="Enviar para Deploy/Standby">⏸</button>
+      <button class="die-act-btn" data-action="edit-die"    data-cid="${cid}" data-did="${did}" title="Definir valor manualmente">✏</button>
+      ${rmBtn}`,
+    used: `
+      <button class="die-act-btn" data-action="reroll-die"  data-cid="${cid}" data-did="${did}" title="Rerolar (volta disponível)">🎲</button>
+      ${rmBtn}`,
+    standby: `
+      <button class="die-act-btn" data-action="use-die"     data-cid="${cid}" data-did="${did}" title="Usar/Gastar">▶</button>
+      <button class="die-act-btn" data-action="restore-die" data-cid="${cid}" data-did="${did}" title="Devolver disponível">↩</button>
+      <button class="die-act-btn" data-action="reroll-die"  data-cid="${cid}" data-did="${did}" title="Rerolar">🎲</button>
+      ${rmBtn}`,
+  };
+
+  const tip = esc(d.breakdown);
+  if (d.status === 'available') return `
+    <div class="die-chip available" title="${tip}">
+      <span class="die-val" data-action="use-die" data-cid="${cid}" data-did="${did}">${d.value}</span>${extTag}
+      <div class="die-acts">${acts.available}</div>
+    </div>`;
+  if (d.status === 'used') return `
+    <div class="die-chip used" title="${tip} — clique para restaurar">
+      <span class="die-val" data-action="restore-die" data-cid="${cid}" data-did="${did}">${d.value}</span>${extTag}
+      <div class="die-acts">${acts.used}</div>
+    </div>`;
+  if (d.status === 'standby') return `
+    <div class="die-chip standby" title="${tip}">
+      <span class="standby-mark">✓</span>
+      <span class="die-val">${d.value}</span>${extTag}
+      <div class="die-acts">${acts.standby}</div>
+    </div>`;
+  return '';
+}
+
+/* ---- EXTRA DIE ---- */
+function extraDieAreaHtml(cid) {
+  if (ui.addExtraDie === cid) {
+    return `<div class="extra-die-picker">
+      <select class="extra-die-sel" data-cid="${cid}">
+        ${DICE_SIZES.map(s => `<option value="${s}"${s===20?' selected':''}>d${s}</option>`).join('')}
+      </select>
+      <button class="btn btn-xs btn-brass" data-action="confirm-extra" data-cid="${cid}">+ Rolar</button>
+      <button class="btn btn-xs btn-ghost" data-action="cancel-extra">✕</button>
+    </div>`;
+  }
+  return `<button class="btn-extra" data-action="open-extra" data-cid="${cid}">+ dado outro</button>`;
+}
+
+/* ---- SETTINGS ---- */
+function settingsHtml(c) {
+  return `<div class="settings-panel">
+    <div class="srow">
+      <div class="sf"><span class="lbl">Tipo</span>
+        <select data-action="update" data-field="type" data-cid="${c.id}">
+          ${Object.entries(TYPE_LABEL).map(([k,v])=>`<option value="${k}"${c.type===k?' selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="sf"><span class="lbl">Dados</span>
+        <input type="number" min="1" max="10" value="${c.diceCount}" data-action="update" data-field="diceCount" data-cid="${c.id}"/>
+      </div>
+      <div class="sf"><span class="lbl">Tam.</span>
+        <select data-action="update" data-field="diceSize" data-cid="${c.id}">
+          ${DICE_SIZES.map(s=>`<option value="${s}"${c.diceSize===s?' selected':''}>${'d'+s}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="srow">
+      <div class="sf"><span class="lbl">Bruto</span>
+        <input type="number" value="${c.bruto}" data-action="update" data-field="bruto" data-cid="${c.id}"/>
+      </div>
+      <div class="sf"><span class="lbl">Bind</span>
+        <input type="number" min="0" value="${c.bind}" data-action="update" data-field="bind" data-cid="${c.id}"/>
+      </div>
+      <div class="sf"><span class="lbl">Acel.</span>
+        <input type="number" min="0" value="${c.accel}" data-action="update" data-field="accel" data-cid="${c.id}"/>
+      </div>
+    </div>
+    <button class="paralyze-btn ${c.paralyze?'on':''}" data-action="paralyze" data-cid="${c.id}">
+      Paralisado — ${c.paralyze ? 'ATIVO (dado trava em 1 na próxima rolagem)' : 'inativo'}
+    </button>
+  </div>`;
+}
+
+/* ---- ADD FORM ---- */
+function addFormHtml() {
+  return `<form class="add-form" data-form="add">
+    <div class="fgrid full" style="margin-bottom:7px;">
+      <div><label>Nome</label>
+        <input class="finput" type="text" name="name" placeholder="Nome do combatente" required/></div>
+    </div>
+    <div style="margin-bottom:7px;">
+      <label>Tipo</label>
+      <div class="type-row">
+        <button type="button" class="tbtn t-pc active" data-set-type="pc">Jogador</button>
+        <button type="button" class="tbtn t-ally" data-set-type="ally">Aliado</button>
+        <button type="button" class="tbtn t-enemy" data-set-type="enemy">Inimigo</button>
+      </div>
+      <input type="hidden" name="type" value="pc"/>
+    </div>
+    <div class="fgrid" style="margin-bottom:7px;">
+      <div><label>Qtd. Dados (1–10)</label>
+        <input class="finput" type="number" name="diceCount" min="1" max="10" value="3"/></div>
+      <div><label>Tamanho</label>
+        <select class="finput" name="diceSize">
+          ${DICE_SIZES.map(s=>`<option value="${s}"${s===8?' selected':''}>d${s}</option>`).join('')}
+        </select></div>
+    </div>
+    <div class="fgrid" style="margin-bottom:7px;">
+      <div><label>Valor Bruto</label>
+        <input class="finput" type="number" name="bruto" value="0"/></div>
+      <div></div>
+    </div>
+    <div class="form-btns">
+      <button type="submit" class="btn btn-brass">Adicionar</button>
+      <button type="button" class="btn btn-ghost" data-action="toggle-add">Cancelar</button>
+    </div>
+  </form>`;
+}
+
+/* ======================== POST-RENDER ======================== */
+function postRender() {
+  if (ui.editDie) {
+    const inp = app.querySelector('.die-edit-input');
+    if (inp) {
+      inp.focus(); inp.select();
+      let done = false;
+      const commit = () => {
+        if (done) return; done = true;
+        commitDieEdit(inp.dataset.cid, inp.dataset.did, inp.value);
+      };
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        if (e.key === 'Escape') { done = true; ui.editDie = null; render(); }
+      });
+    }
+  }
+}
+
+/* ======================== EVENTS ======================== */
+function esc(s) { return escapeHtml(s); }
+
+app.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const { action, cid, did } = el.dataset;
+
+  switch (action) {
+    case 'scene-dec': changeScene(-1); break;
+    case 'scene-inc': changeScene(+1); break;
+    case 'reroll-all': rerollAll(); break;
+    case 'toggle-add': ui.addOpen = !ui.addOpen; render(); break;
+    case 'settings':
+      ui.openSettings.has(cid) ? ui.openSettings.delete(cid) : ui.openSettings.add(cid);
+      render(); break;
+    case 'reroll': rerollCombatant(cid); break;
+    case 'toggle-all': toggleAllDice(cid); break;
+    case 'delete':
+      if (ui.confirmDelete === cid) { removeCombatant(cid); }
+      else {
+        ui.confirmDelete = cid; render();
+        setTimeout(() => { if (ui.confirmDelete === cid) { ui.confirmDelete = null; render(); } }, 3000);
+      }
+      break;
+    case 'use-die':     setDieStatus(cid, did, 'used'); break;
+    case 'restore-die': setDieStatus(cid, did, 'available'); break;
+    case 'standby-die': setDieStatus(cid, did, 'standby'); break;
+    case 'reroll-die':  doRerollDie(cid, did); break;
+    case 'edit-die':    ui.editDie = {cid, did}; render(); break;
+    case 'remove-die':  removeExtraDie(cid, did); break;
+    case 'open-extra':  ui.addExtraDie = cid; render(); break;
+    case 'cancel-extra': ui.addExtraDie = null; render(); break;
+    case 'confirm-extra': {
+      const sel = app.querySelector('.extra-die-sel');
+      doAddExtraDie(cid, sel ? sel.value : 20);
+      break;
+    }
+    case 'paralyze': toggleParalyze(cid); break;
+  }
+});
+
+// type selector buttons in add form
+app.addEventListener('click', e => {
+  const btn = e.target.closest('[data-set-type]');
+  if (!btn) return;
+  const form = btn.closest('form');
+  if (!form) return;
+  form.querySelectorAll('[data-set-type]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  form.querySelector('[name="type"]').value = btn.dataset.setType;
+});
+
+// field changes (settings + add form)
+app.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.action === 'update' && el.dataset.field) {
+    updateField(el.dataset.cid, el.dataset.field, el.value);
+  }
+});
+
+// name field (blur to save)
+app.addEventListener('blur', e => {
+  const el = e.target;
+  if (el.dataset.action === 'update' && el.dataset.field === 'name') {
+    updateField(el.dataset.cid, 'name', el.value);
+  }
+}, true);
+
+// add form submit
+app.addEventListener('submit', e => {
+  if (e.target.dataset.form !== 'add') return;
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  addCombatant({
+    name:      (fd.get('name') || '').toString().trim() || 'Combatente',
+    type:      fd.get('type'),
+    diceCount: Number(fd.get('diceCount')),
+    diceSize:  Number(fd.get('diceSize')),
+    bruto:     Number(fd.get('bruto')) || 0,
+  });
+  ui.addOpen = false;
+});
+
+/* ======================== BOOTSTRAP ======================== */
+function showFallback(ico, title, msg) {
+  app.innerHTML = `<div class="fallback"><div class="ico">${ico}</div><h2>${title}</h2><p>${msg}</p></div>`;
+}
+
+if (!OBR.isAvailable) {
+  showFallback('⚙','Fora do Owlbear Rodeo','Instale como extensão em uma sala do Owlbear para usar.');
+} else {
+  OBR.onReady(async () => {
+    OBR.scene.onReadyChange(ready => {
+      ready ? init() : showFallback('🗺','Abra uma cena','Crie ou abra uma cena no Owlbear para começar.');
+    });
+    if (await OBR.scene.isReady()) init();
+    else showFallback('🗺','Abra uma cena','Crie ou abra uma cena no Owlbear para começar.');
+  });
+}
+
+async function init() {
+  const meta = await OBR.scene.getMetadata();
+  const saved = meta[META_KEY];
+  state = (saved && saved.combatants) ? saved : { sceneCount: 0, combatants: [] };
+  render();
+  OBR.scene.onMetadataChange(m => {
+    const inc = m[META_KEY];
+    if (inc && inc.combatants) { state = inc; render(); }
+  });
+}
+</script>
+</body>
+</html>
