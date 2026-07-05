@@ -262,16 +262,56 @@ function toggleAllDice(cid) {
 }
 
 /* ======================== RANKING ======================== */
-function computeRanked(combatants) {
-  const list = combatants.map(c => ({ c, max: highestAvailable(c) }))
-    .sort((a, b) => b.max - a.max);
-  for (let i = 0; i < list.length; i++) {
-    if (list[i].max === 0)       list[i].rank = null;
-    else if (i === 0)            list[i].rank = 1;
-    else if (list[i].max === list[i-1].max) list[i].rank = list[i-1].rank;
-    else                         list[i].rank = i + 1;
+
+/** Retorna os valores dos dados disponiveis de um combatente, do maior para o menor. */
+function availableDiceSorted(c) {
+  return (c.dice || [])
+    .filter(d => d.status === 'available')
+    .map(d => d.value)
+    .sort((a, b) => b - a);
+}
+
+/**
+ * Compara dois combatentes para ordenacao da lista de iniciativa.
+ * Criterios em ordem:
+ *  1. Dado 1 (maior disponivel), 2. Dado 2, Dado 3 ... ate Dado 10
+ *  3. Menor Bind  4. Maior Aceleracao  5. Maior Valor Bruto
+ */
+function compareCombatants(a, b) {
+  const aDice = availableDiceSorted(a);
+  const bDice = availableDiceSorted(b);
+  const len = Math.max(aDice.length, bDice.length, 1);
+  for (let i = 0; i < len; i++) {
+    const av = aDice[i] !== undefined ? aDice[i] : 0;
+    const bv = bDice[i] !== undefined ? bDice[i] : 0;
+    if (av !== bv) return bv - av;
   }
-  return list;
+  const bindDiff = (a.bind || 0) - (b.bind || 0);
+  if (bindDiff !== 0) return bindDiff;
+  const accelDiff = (b.accel || 0) - (a.accel || 0);
+  if (accelDiff !== 0) return accelDiff;
+  return (b.bruto || 0) - (a.bruto || 0);
+}
+
+function computeRanked(combatants) {
+  const sorted = [...combatants].sort(compareCombatants);
+  const result = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const c = sorted[i];
+    const max = highestAvailable(c);
+    let rank;
+    if (max === 0) {
+      rank = null;
+    } else if (i === 0) {
+      rank = 1;
+    } else if (compareCombatants(c, sorted[i - 1]) === 0) {
+      rank = result[i - 1].rank;
+    } else {
+      rank = i + 1;
+    }
+    result.push({ c, rank, max });
+  }
+  return result;
 }
 
 /* ======================== RENDER ======================== */
